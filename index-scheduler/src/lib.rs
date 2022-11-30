@@ -1065,19 +1065,21 @@ impl IndexScheduler {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Seek, Write, BufWriter};
     use std::time::Instant;
 
     use big_s::S;
     use crossbeam::channel::RecvTimeoutError;
     use file_store::File;
     use meili_snap::snapshot;
+    use meilisearch_types::document_formats::DocumentFormatError;
     use meilisearch_types::milli::obkv_to_json;
     use meilisearch_types::milli::update::IndexDocumentsMethod::{
         ReplaceDocuments, UpdateDocuments,
     };
     use meilisearch_types::tasks::IndexSwap;
     use meilisearch_types::VERSION_FILE_NAME;
-    use tempfile::TempDir;
+    use tempfile::{TempDir, NamedTempFile};
     use time::Duration;
     use uuid::Uuid;
     use Breakpoint::*;
@@ -1184,6 +1186,15 @@ mod tests {
         }
     }
 
+    /// Adapting to the new json reading interface
+    pub fn read_json(bytes: &[u8], write: impl Write + Seek) -> std::result::Result<usize, DocumentFormatError> {
+        let temp_file = NamedTempFile::new().unwrap();
+        let mut buffer = BufWriter::new(temp_file.reopen().unwrap());
+        buffer.write(bytes).unwrap();
+        buffer.flush().unwrap();
+        meilisearch_types::document_formats::read_json(temp_file.as_file(), write)
+    }
+
     /// Create an update file with the given file uuid.
     ///
     /// The update file contains just one simple document whose id is given by `document_id`.
@@ -1203,7 +1214,7 @@ mod tests {
 
         let (_uuid, mut file) = index_scheduler.create_update_file_with_uuid(file_uuid).unwrap();
         let documents_count =
-            meilisearch_types::document_formats::read_json(content.as_bytes(), file.as_file_mut())
+            read_json(content.as_bytes(), file.as_file_mut())
                 .unwrap() as u64;
         (file, documents_count)
     }
@@ -1585,7 +1596,7 @@ mod tests {
 
         let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(0).unwrap();
         let documents_count =
-            meilisearch_types::document_formats::read_json(content.as_bytes(), file.as_file_mut())
+            read_json(content.as_bytes(), file.as_file_mut())
                 .unwrap() as u64;
         file.persist().unwrap();
         index_scheduler
@@ -1624,7 +1635,7 @@ mod tests {
 
         let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(0).unwrap();
         let documents_count =
-            meilisearch_types::document_formats::read_json(content.as_bytes(), file.as_file_mut())
+            read_json(content.as_bytes(), file.as_file_mut())
                 .unwrap() as u64;
         file.persist().unwrap();
         index_scheduler
@@ -1793,7 +1804,7 @@ mod tests {
 
         let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(0).unwrap();
         let documents_count =
-            meilisearch_types::document_formats::read_json(content.as_bytes(), file.as_file_mut())
+            read_json(content.as_bytes(), file.as_file_mut())
                 .unwrap() as u64;
         file.persist().unwrap();
         index_scheduler
@@ -1952,7 +1963,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2003,7 +2014,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2056,7 +2067,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2110,7 +2121,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2165,7 +2176,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2617,7 +2628,7 @@ mod tests {
 
         let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(0).unwrap();
         let documents_count =
-            meilisearch_types::document_formats::read_json(content.as_bytes(), file.as_file_mut())
+            read_json(content.as_bytes(), file.as_file_mut())
                 .unwrap() as u64;
         file.persist().unwrap();
         index_scheduler
@@ -2657,7 +2668,7 @@ mod tests {
 
         let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(0).unwrap();
         let documents_count =
-            meilisearch_types::document_formats::read_json(content.as_bytes(), file.as_file_mut())
+            read_json(content.as_bytes(), file.as_file_mut())
                 .unwrap() as u64;
         file.persist().unwrap();
         index_scheduler
@@ -2714,7 +2725,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2766,7 +2777,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2824,7 +2835,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2887,7 +2898,7 @@ mod tests {
             );
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -2955,7 +2966,7 @@ mod tests {
             let allow_index_creation = i % 2 != 0;
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
@@ -3012,7 +3023,7 @@ mod tests {
             let allow_index_creation = i % 2 != 0;
 
             let (uuid, mut file) = index_scheduler.create_update_file_with_uuid(i).unwrap();
-            let documents_count = meilisearch_types::document_formats::read_json(
+            let documents_count = read_json(
                 content.as_bytes(),
                 file.as_file_mut(),
             )
