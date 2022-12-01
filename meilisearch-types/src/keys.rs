@@ -10,7 +10,8 @@ use time::{Date, OffsetDateTime, PrimitiveDateTime};
 use uuid::Uuid;
 
 use crate::error::{Code, ErrorCode};
-use crate::index_uid::{IndexUid, IndexUidFormatError};
+use crate::index_uid::IndexUidFormatError;
+use crate::index_uid_pattern::{IndexUidPattern, IndexUidPatternFormatError};
 use crate::star_or::StarOr;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -25,7 +26,7 @@ pub struct Key {
     pub name: Option<String>,
     pub uid: KeyId,
     pub actions: Vec<Action>,
-    pub indexes: Vec<StarOr<IndexUid>>,
+    pub indexes: Vec<StarOr<IndexUidPattern>>,
     #[serde(with = "time::serde::rfc3339::option")]
     pub expires_at: Option<OffsetDateTime>,
     #[serde(with = "time::serde::rfc3339")]
@@ -70,8 +71,8 @@ impl Key {
                     .map_err(|_| Error::InvalidApiKeyIndexes(ind.clone()))
                     .and_then(|ind| {
                         ind.into_iter()
-                            // If it's not a valid Index uid, return an Index Uid parsing error.
-                            .map(|i| StarOr::<IndexUid>::from_str(&i).map_err(Error::from))
+                            // If it's not a valid IndexUidPattern, return an IndexUidPattern parsing error.
+                            .map(|i| StarOr::<IndexUidPattern>::from_str(&i).map_err(Error::from))
                             .collect()
                     })
             })
@@ -369,6 +370,14 @@ pub enum Error {
 impl From<IndexUidFormatError> for Error {
     fn from(e: IndexUidFormatError) -> Self {
         Self::InvalidApiKeyIndexUid(e)
+    }
+}
+
+impl From<IndexUidPatternFormatError> for Error {
+    fn from(e: IndexUidPatternFormatError) -> Self {
+        // TODO should I return a new error or change the current one?
+        // Self::InvalidApiKeyIndexUid(e)
+        todo!()
     }
 }
 
