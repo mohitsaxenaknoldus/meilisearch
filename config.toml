@@ -58,7 +58,7 @@ disable_auto_batching = false
 
 dump_dir = "dumps/"
 # Sets the directory where Meilisearch will create dump files.
-# https://docs.meilisearch.com/learn/configuration/instance_options.html#dumps-destination
+# https://docs.meilisearch.com/learn/configuration/instance_options.html#dump-directory
 
 # import_dump = "./path/to/my/file.dump"
 # Imports the dump file located at the specified path. Path must point to a .dump file.
